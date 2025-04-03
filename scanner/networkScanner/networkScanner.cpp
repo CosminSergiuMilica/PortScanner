@@ -126,12 +126,6 @@ void NetworkScanner::runScan(Mode mode) {
                 threads.clear();
             }
         }
-
-        for (auto& t : threads) {
-            t.join();
-        }
-
-        threads.clear();
     }
 }
 
