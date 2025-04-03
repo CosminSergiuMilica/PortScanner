@@ -27,9 +27,11 @@ void PortScanner::scanTCP(int port){
 void PortScanner::scanUDP(int port){
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock == -1) {
-        cout << "##Error##: Could not create socket for UDP" << endl;
+        perror("##Error##: Could not create socket for UDP");
         return;
     }
+    
+    fcntl(sock, F_SETFL, O_NONBLOCK);
 
     sockaddr_in server_addr{};
     server_addr.sin_family = AF_INET;
@@ -37,19 +39,42 @@ void PortScanner::scanUDP(int port){
     inet_pton(AF_INET, target_ip.c_str(), &server_addr.sin_addr);
 
     char buffer[1] = {0};
-    sendto(sock, buffer, sizeof(buffer), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    ssize_t bytes_sent = sendto(sock, buffer, sizeof(buffer), 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+    if (bytes_sent == -1) {
+        perror("##Error##: Could not send data");
+        close(sock);
+        return;
+    }
+
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(sock, &read_fds);
 
     timeval timeout{};
     timeout.tv_sec = 1;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
 
-    socklen_t addr_len = sizeof(server_addr);
-    if (recvfrom(sock, buffer, sizeof(buffer), 0, (struct sockaddr*)&server_addr, &addr_len) >= 0) {
-        cout << "\t[+] UDP Port " << port << " is OPEN" << endl;
+    int select_result = select(sock + 1, &read_fds, nullptr, nullptr, &timeout);
+
+    if (select_result > 0) {
+        sockaddr_in response_addr{};
+        socklen_t addr_len = sizeof(response_addr);
+        char recv_buffer[1024];
+
+        ssize_t bytes_received = recvfrom(sock, recv_buffer, sizeof(recv_buffer), 0, (struct sockaddr*)&response_addr, &addr_len);
+        if (bytes_received >= 0) {
+            struct ip *ip_header = (struct ip *)recv_buffer;
+            struct icmphdr *icmp_header = (struct icmphdr *)(recv_buffer + (ip_header->ip_hl << 2));
+            if (icmp_header->type == ICMP_DEST_UNREACH) {
+                std::cout << "\t[-] UDP Port " << port << " is CLOSED (ICMP response)" << std::endl;
+            }
+        }
+    } else {
+        std::cout << "\t[+] UDP Port " << port << " is OPEN (no ICMP response)" << std::endl;
     }
 
     close(sock);
 }
+
 
 void PortScanner::runScan(Mode mode) {
     vector<thread> threads;
@@ -68,7 +93,7 @@ void PortScanner::runScan(Mode mode) {
                 break;
         }
 
-        if (threads.size() >= 10000) {
+        if (threads.size() >= 100) {
             for (auto& t : threads) {
                 t.join();
             }

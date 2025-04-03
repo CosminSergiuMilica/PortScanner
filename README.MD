@@ -60,4 +60,19 @@ g++ -o pscan main.cpp \
 - Includes host detection to avoid unnecessary scans.
 - Runs efficiently with optimized concurrency.
 
+## Known Issues with UDP Scan
+UDP scan can be unreliable due to the connectionless nature of UDP. If a port is open but does not respond, or if a firewall blocks ICMP/UDP responses, the scanner might incorrectly report the port status. This functionality needs further improvement.
+
+## Current UDP Scan Method
+
+1. **Send a UDP Packet** to the target port.
+
+2. **Wait for a Response**:
+   - If an **ICMP Destination Unreachable** message is received, the port is considered closed.
+   - If no response is received, the port is considered open.
+
+3. **Limitations**:
+   - UDP is connectionless, so no response doesn't always mean the port is closed. This scan might not be fully reliable.
+
+This method needs improvement for more reliable checks, as a port not responding isn't necessarily closed.
 

@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <thread>
 #include <string>
+#include <fcntl.h>
+#include <netinet/ip_icmp.h>
 #include<mutex>
 #include <iostream>
 
