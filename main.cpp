@@ -29,5 +29,7 @@ int main(int argc, const char* argv[]) {
 
     scanner->runScan(mode);
 
+    delete scanner;
+    scanner = nullptr;
     return 0;
 }
