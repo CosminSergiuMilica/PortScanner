@@ -1,6 +1,15 @@
 #include "NetworkScanner.h"
 std::mutex output_mutex;
-
+bool isHostAlive(const std::string& ip) {
+    std::string command = "ping -c 1 -W 1 " + ip + " > /dev/null 2>&1"; 
+    int result = system(command.c_str());
+    
+    if (result == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
 std::vector<std::string> NetworkScanner::getNetworkIPs(){
     std::vector<std::string> ip_list;
 
@@ -89,19 +98,28 @@ void NetworkScanner::scanPort(const std::string& ip, int port, Mode mode) const 
     }
 }
 
-void NetworkScanner::runScan(Mode mode){
+void NetworkScanner::runScan(Mode mode) {
     std::vector<std::string> ip_list = getNetworkIPs();
+    std::vector<std::thread> threads;
+    size_t maxThreads = 100;
+
     for (const auto& ip : ip_list) {
-        std::vector<std::thread> threads;
         {
             std::lock_guard<std::mutex> lock(output_mutex);
             std::cout << "[*] Starting scan on IP: " << ip << std::endl;
         }
+        if (!isHostAlive(ip)) {
+            std::lock_guard<std::mutex> lock(output_mutex);
+            std::cout << "\t[-] No device found at " << ip << std::endl;
+            continue;
+        }
+
         for (int port = start_port; port <= end_port; ++port) {
             threads.push_back(std::thread([=]() {
                 scanPort(ip, port, mode);
             }));
-            if (threads.size() >= 10000) {
+
+            if (threads.size() >= maxThreads) {
                 for (auto& t : threads) {
                     t.join();
                 }
@@ -112,8 +130,11 @@ void NetworkScanner::runScan(Mode mode){
         for (auto& t : threads) {
             t.join();
         }
+
+        threads.clear();
     }
 }
+
 
 NetworkScanner::NetworkScanner(std::string network, int start, int end){
     this->network = network;

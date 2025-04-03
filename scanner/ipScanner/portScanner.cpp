@@ -68,7 +68,7 @@ void PortScanner::runScan(Mode mode) {
                 break;
         }
 
-        if (threads.size() >= 1000) {
+        if (threads.size() >= 10000) {
             for (auto& t : threads) {
                 t.join();
             }
