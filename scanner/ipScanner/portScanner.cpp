@@ -67,6 +67,13 @@ void PortScanner::runScan(Mode mode) {
                 threads.emplace_back(&PortScanner::scanUDP, this, port);
                 break;
         }
+
+        if (threads.size() >= 1000) {
+            for (auto& t : threads) {
+                t.join();
+            }
+            threads.clear();
+        }
     }
 
     for (auto& t : threads) {

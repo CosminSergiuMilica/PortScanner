@@ -1,28 +1,33 @@
 #include <iostream>
-#include "scanner/PortScanner.h"
+#include "scanner/interface/scanner.h"
+#include "scanner/networkScanner/NetworkScanner.h"
+#include "scanner/ipScanner/PortScanner.h"
 
 int main(int argc, const char* argv[]) {
     ArgumentParser parser(argc, argv);
-    
-    if (!parser.parseArguments()) {
-        return 1;
+
+    Scanner * scanner;
+    if(parser.getIsNetwork()){
+        cout<<parser.getTarget()<<endl;
+        scanner = new NetworkScanner(parser.getTarget(), parser.getStartPort(), parser.getEndPort());
+    }
+    else{
+        scanner = new PortScanner(parser.getTarget(), parser.getStartPort(), parser.getEndPort());
     }
 
-    PortScanner scanner(parser.getTargetIP(), parser.getStartPort(), parser.getEndPort());
-
-    cout << "##Scanning " << parser.getTargetIP() << " from port " << parser.getStartPort() 
+    std::cout << "##Scanning " << parser.getTarget() << " from port " << parser.getStartPort() 
          << " to " << parser.getEndPort() << " in mode: ";
 
     Mode mode = parser.getScanMode();
     if (mode == TCP) {
-        cout << "TCP" << endl;
+        std::cout << "TCP" << std::endl;
     } else if (mode == UDP) {
-        cout << "UDP" << endl;
+        std::cout << "UDP" << std::endl;
     } else {
-        cout << "Both TCP and UDP" << endl;
+        std::cout << "Both TCP and UDP" << std::endl;
     }
 
-    scanner.runScan(mode);
+    scanner->runScan(mode);
 
     return 0;
 }

@@ -49,6 +49,12 @@
         "stop_token": "cpp",
         "streambuf": "cpp",
         "thread": "cpp",
-        "typeinfo": "cpp"
-    }
+        "typeinfo": "cpp",
+        "bitset": "cpp",
+        "regex": "cpp",
+        "sstream": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

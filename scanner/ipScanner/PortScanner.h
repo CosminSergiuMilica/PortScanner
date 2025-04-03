@@ -3,15 +3,14 @@
 
 #include <vector>
 #include <thread>
-#include <cerrno>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "ArgumentParser.h"
+#include "scanner.h"
 
 using namespace std;
 
-class PortScanner {
+class PortScanner: public Scanner {
 private:
     std::string target_ip;
     int start_port;
@@ -22,8 +21,7 @@ protected:
 
 public:
     PortScanner(std::string ip, int start, int end);
-
-    void runScan(Mode mode = FULL);
+    void runScan(Mode mode = FULL) override;
 };
 
 #endif
